@@ -160,7 +160,7 @@ public class SplunkRum {
 
     private OkHttpTracing createOkHttpTracing() {
         return OkHttpTracing
-                .newBuilder(openTelemetrySdk)
+                .builder(openTelemetrySdk)
                 .addAttributesExtractor(new RumResponseAttributesExtractor(new ServerTimingHeaderParser()))
                 .build();
         //TODO: review this builder
