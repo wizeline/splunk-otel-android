@@ -38,8 +38,6 @@ public class SampleApplication extends Application {
         Config config = SplunkRum.newConfigBuilder()
                 // note: for these values to be resolved, put them in your local.properties file as
                 // rum.beacon.url and rum.access.token
-                .realm(getResources().getString(R.string.rum_realm))
-                .rumAccessToken(getResources().getString(R.string.rum_access_token))
                 .applicationName("Android Demo App")
                 .debugEnabled(true)
                 .deploymentEnvironment("demo")
@@ -56,6 +54,6 @@ public class SampleApplication extends Application {
                                 .replaceSpanAttribute(StandardAttributes.HTTP_URL,
                                         value -> HTTP_URL_SENSITIVE_DATA_PATTERN.matcher(value).replaceAll("$1=<redacted>")))
                 .build();
-        SplunkRum.initialize(config, this);
+        SplunkRum.initialize(config, this, new StardustExporter());
     }
 }

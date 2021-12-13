@@ -35,8 +35,6 @@ import io.opentelemetry.semconv.resource.attributes.ResourceAttributes;
  */
 public class Config {
 
-    private final String beaconEndpoint;
-    private final String rumAccessToken;
     private final boolean debugEnabled;
     private final String applicationName;
     private final boolean crashReportingEnabled;
@@ -46,8 +44,6 @@ public class Config {
     private final Function<SpanExporter, SpanExporter> spanFilterExporterDecorator;
 
     private Config(Builder builder) {
-        this.beaconEndpoint = builder.beaconEndpoint;
-        this.rumAccessToken = builder.rumAccessToken;
         this.debugEnabled = builder.debugEnabled;
         this.applicationName = builder.applicationName;
         this.crashReportingEnabled = builder.crashReportingEnabled;
@@ -65,20 +61,6 @@ public class Config {
                     .build();
         }
         return globalAttributes;
-    }
-
-    /**
-     * The configured "beacon" URL for the RUM library.
-     */
-    public String getBeaconEndpoint() {
-        return beaconEndpoint;
-    }
-
-    /**
-     * The configured RUM access token for the library.
-     */
-    public String getRumAccessToken() {
-        return rumAccessToken;
     }
 
     /**
@@ -141,68 +123,21 @@ public class Config {
     public static class Builder {
         public boolean networkMonitorEnabled = true;
         public boolean anrDetectionEnabled = true;
-        private String beaconEndpoint;
-        private String rumAccessToken;
         private boolean debugEnabled = false;
         private String applicationName;
         private boolean crashReportingEnabled = true;
         private Attributes globalAttributes = Attributes.empty();
         private String deploymentEnvironment;
         private final SpanFilterBuilder spanFilterBuilder = new SpanFilterBuilder();
-        private String realm;
 
         /**
          * Create a new instance of {@link Config} from the options provided.
          */
         public Config build() {
-            if (rumAccessToken == null || beaconEndpoint == null || applicationName == null) {
-                throw new IllegalStateException("You must provide a rumAccessToken, a realm (or full beaconEndpoint), and an applicationName to create a valid Config instance.");
+            if (applicationName == null) {
+                throw new IllegalStateException("You must provide an applicationName to create a valid Config instance.");
             }
             return new Config(this);
-        }
-
-        /**
-         * Assign the "beacon" endpoint URL to be used by the RUM library.
-         * <p>
-         * Note that if you are using standard Splunk ingest, it is simpler to just use {@link #realm(String)}
-         * and let this configuration set the full endpoint URL for you.
-         *
-         * @return this
-         */
-        public Builder beaconEndpoint(String beaconEndpoint) {
-            if (realm != null) {
-                Log.w(SplunkRum.LOG_TAG, "Explicitly setting the beaconEndpoint will override the realm configuration.");
-                realm = null;
-            }
-            this.beaconEndpoint = beaconEndpoint;
-            return this;
-        }
-
-        /**
-         * Sets the realm for the beacon to send RUM telemetry to. This should be used in place
-         * of the {@link #beaconEndpoint(String)} method in most cases.
-         *
-         * @param realm A valid Splunk "realm"
-         * @return this
-         */
-        public Builder realm(String realm) {
-            if (beaconEndpoint != null && this.realm == null) {
-                Log.w(SplunkRum.LOG_TAG, "beaconEndpoint has already been set. Realm configuration will be ignored.");
-                return this;
-            }
-            this.beaconEndpoint = "https://rum-ingest." + realm + ".signalfx.com/v1/rum";
-            this.realm = realm;
-            return this;
-        }
-
-        /**
-         * Assign the RUM auth token to be used by the RUM library.
-         *
-         * @return this
-         */
-        public Builder rumAccessToken(String rumAuthToken) {
-            this.rumAccessToken = rumAuthToken;
-            return this;
         }
 
         /**

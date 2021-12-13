@@ -39,6 +39,7 @@ import io.opentelemetry.api.trace.StatusCode;
 import io.opentelemetry.api.trace.Tracer;
 import io.opentelemetry.instrumentation.okhttp.v3_0.OkHttpTracing;
 import io.opentelemetry.sdk.OpenTelemetrySdk;
+import io.opentelemetry.sdk.trace.export.SpanExporter;
 import io.opentelemetry.semconv.trace.attributes.SemanticAttributes;
 import okhttp3.Call;
 import okhttp3.Interceptor;
@@ -94,8 +95,8 @@ public class SplunkRum {
      * @param application The {@link Application} to be monitored.
      * @return A fully initialized {@link SplunkRum} instance, ready for use.
      */
-    public static SplunkRum initialize(Config config, Application application) {
-        return initialize(config, application, () -> {
+    public static SplunkRum initialize(Config config, Application application, SpanExporter stardustExporter) {
+        return initialize(config, application, stardustExporter, () -> {
             Context context = application.getApplicationContext();
             ConnectionUtil connectionUtil = new ConnectionUtil(NetworkDetector.create(context));
             connectionUtil.startMonitoring(ConnectionUtil::createNetworkMonitoringRequest, (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE));
@@ -104,13 +105,13 @@ public class SplunkRum {
     }
 
     //for testing purposes
-    static SplunkRum initialize(Config config, Application application, Supplier<ConnectionUtil> connectionUtilSupplier) {
+    static SplunkRum initialize(Config config, Application application, SpanExporter stardustExporter, Supplier<ConnectionUtil> connectionUtilSupplier) {
         if (INSTANCE != null) {
             Log.w(LOG_TAG, "Singleton SplunkRum instance has already been initialized.");
             return INSTANCE;
         }
 
-        INSTANCE = new RumInitializer(config, application, startupTimer)
+        INSTANCE = new RumInitializer(config, application, startupTimer, stardustExporter)
                 .initialize(connectionUtilSupplier, Looper.getMainLooper());
 
         if (config.isDebugEnabled()) {
@@ -162,6 +163,7 @@ public class SplunkRum {
                 .newBuilder(openTelemetrySdk)
                 .addAttributesExtractor(new RumResponseAttributesExtractor(new ServerTimingHeaderParser()))
                 .build();
+        //TODO: review this builder
     }
 
     /**
